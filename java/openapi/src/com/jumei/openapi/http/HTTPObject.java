@@ -22,7 +22,7 @@ import com.jumei.openapi.JMOpenAPIConst;
  *
  */
 public class HTTPObject {
-	public final static int TIME_OUT=30;
+	public final static int READ_TIME_OUT=30;
 	public final static int CONNECT_TIME_OUT=30;
 	/**
 	 * 
@@ -32,7 +32,7 @@ public class HTTPObject {
 	 * @throws IOException
 	 */
 	public static String post(String url,Map<String, String> params) throws IOException{
-		return post(url,params,JMOpenAPIConst.DEFAULT_CHARSET,TIME_OUT,CONNECT_TIME_OUT);
+		return post(url,params,JMOpenAPIConst.DEFAULT_CHARSET,CONNECT_TIME_OUT,READ_TIME_OUT);
 	}
 	/**
 	 * 
@@ -43,7 +43,7 @@ public class HTTPObject {
 	 * @throws IOException
 	 */
 	public static String post(String url,Map<String, String> params,String charset) throws IOException{
-		return post(url,params,charset,TIME_OUT,CONNECT_TIME_OUT);
+		return post(url,params,charset,CONNECT_TIME_OUT,READ_TIME_OUT);
 	}
 	/**
 	 * 
@@ -96,23 +96,23 @@ public class HTTPObject {
 	 * @throws IOException
 	 */
 	public static String get(String url,Map<String, String> params,String charset) throws IOException{
-		return get(url,params,charset,TIME_OUT,CONNECT_TIME_OUT);
+		return get(url,params,charset,CONNECT_TIME_OUT,READ_TIME_OUT);
 	}
 	/**
 	 * 
 	 * @param url
 	 * @param params
 	 * @param charset
-	 * @param readTimeout
 	 * @param connectTimeout
+	 * @param readTimeout
 	 * @return
 	 * @throws IOException
 	 */
-	public static String get(String url,Map<String, String> params,String charset,int readTimeout,int connectTimeout) throws IOException{
+	public static String get(String url,Map<String, String> params,String charset,int connectTimeout,int readTimeout) throws IOException{
 		String ctype = "application/x-www-form-urlencoded;charset=" + charset;
 		HttpURLConnection conn = null;
 		try {
-			conn = getConnection(new URL(getGetURL(url, params)), "POST", ctype);
+			conn = getConnection(new URL(getGetURL(url, params)), "GET", ctype);
 			conn.connect();
 			conn.setConnectTimeout(connectTimeout);
 			conn.setReadTimeout(readTimeout);

@@ -5,68 +5,40 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jumei.openapi.JMOpenAPIConst;
+import com.jumei.openapi.JMOpenAPIException;
 import com.jumei.openapi.JMOpenApi;
 
 /**
- * For example.
- * Mian.java
+ * Java SDK for openapi2.0
  * 
- * @author xingchaof@jumei.com           
- *
+ * 该类是根据聚美OpenAPI2.0文档写的,为了演示如何用JAVA代码调用相关接口。
+ * 核心是计算sign的值，也就是
+ * com.jumei.openapi.internal.utils.JMOpenApiUtils.generateSignKey
+ * 方法。具体算法文档有提到。本次更新删除了部分不必要的代码。仅仅留下了极少的代码。
+ * 最大程度的保持简单易懂。
+ * 你需要在JMOpenAPIConst这个类里面配置相关信息，或者你可以使用java的
+ * properties文件。来代替此配置。因此SDK目的是演示作用，并没有实现json转化为具
+ * 体对象的相关api.如果需要操作，推荐使用gson或者fastJson等相关的json包作为处理
+ * 整个JMOpenApi只有一个方法为api,你可以制定请求方式为GET/POST.如果某个api不具
+ * 有参数，传入null即可。否则以map格式传入key-value对。你也可以不指定请求参数，
+ * 则使用默认的方式(POST)。
+ * 
+ * @author xingchaof <xingchaof@jumei.com>
  */
+
 public class Mian {
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, JMOpenAPIException {
 		String clientId  = JMOpenAPIConst.CLIENT_ID;
 		String clientKey = JMOpenAPIConst.CLIENT_KEY;
 		String venderKey = JMOpenAPIConst.SIGN_KEY;
-		//默认需要该三个参数进行验证，当然可以使用无参数构造，然后使用setter
-		JMOpenApi api = new JMOpenApi(clientId,clientKey,venderKey);
-		//JMOpenApi api = new JMOpenApi();
-		//api.setClientId(clientId); //and so on.
+		JMOpenApi openApi = new JMOpenApi(clientId,clientKey,venderKey);
+		//==========演示===========
+		String resp = openApi.api("/Order/GetLogistics", "GET", null);
+		System.out.println(resp);
 		
-		System.out.println("获取页面URL的origin：类似于javascript的[window.location.origin]");
-		System.out.println(api.getBaseURL());
-		
-		System.out.println("api 演示：");
-		//api 1
-		System.out.println("获取聚美合作的快递合作商：");
-		System.out.println(api.getLogistics());//api 1.
-		
-		//api 2
-		System.out.println("通过id获取订单:");
-		System.out.println(api.getOrderById(135944067));//api 2
-		
-		/**
-		 * 接下来是需要参数的另外几个api.具体参考文档提供。
-		 */
-		//api 3
-		System.out.println("批量获取订单：");
-		Map<String,String> params = new HashMap<String,String>();
-		//时间不是必须。但格式就是这样
-		//params.put("start_date","2013-11-24 17:15:00");
-		//params.put("end_date","2013-12-10 17:15:00");
-		params.put("status","2");
-		params.put("page", "1");
-		params.put("page_size", "5");
-		System.out.println(api.getOrder(params));//api 3
-		
-		//api 4
-		System.out.println("备货：");
-		String[] order_ids={"4353453543","3453465546"};//订单序列
-		System.out.println(api.setOrderStock(order_ids));//api 4 
-		
-		//api 5
-		System.out.println("订单发货：");
-		String orderId= "32423423";//订单号
-		String logisticId="31";//快递公司id(来自聚美快递列表).参见api 1
-		String logisticTrackNo="3425324532453";//快递单号
-		System.out.println(api.setShipping(orderId, logisticId, logisticTrackNo));//api 5
-		
-		//api 6 
-		System.out.println("SKU库存同步接口");
-		String upcCode="TSI34356";//upc_code
-		String enableNum = "1234";//should be integer.
-		System.out.println(api.syncStock(upcCode,enableNum));//api 6
-		
+		Map<String, String> parameters = new HashMap<String, String>();
+		parameters.put("order_id", "300131257");
+		resp = openApi.api("/Order/GetOrderById", parameters);
+		System.out.println(resp);
 	}
 }

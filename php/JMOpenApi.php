@@ -1,12 +1,18 @@
 <?php
 /**
  * PHP SDK for openapi2.0
- *
- * more details see:http://openapi.ext.jumei.com/
- *
- * PHP version 5
- *
- * Date : 2014.7.8
+ * 
+ * 该类是根据聚美OpenAPI2.0文档写的,为了演示如何用PHP代码调用相关接口。
+ * 核心是计算sign的值，也就是generateSign方法。具体算法文档有提到，代
+ * 码依赖PHP的curl扩展和json扩展，否则可能不能使用。本次更新删除了部分
+ * 不必要的代码。仅仅留下了极少的代码。最大程度的保持简单。(所以相关属性
+ * 的getter/setter也没写了。  )
+ * get/post只是为了实现一个wrapper出来给用户用。实际上他们也是不必要的。
+ * 你可以直接使用authRequest方法指定接口名称，请求方法和请求参数列表。
+ * 比如:
+ *     authReqeust('/Order/GetLogistics','GET',array())
+ * 就表示获取接口二:获取聚美合作的快递信息.
+ * 优先推荐使用POST方式。所以总是建议使用post这个wrapper.
  *
  * @author xingchaof <xingchaof@jumei.com>
  */
@@ -18,15 +24,14 @@ require_once 'JMOpenApiException.php';
  */
 class JMOpenApi
 {
-    public $client_id;
-    public $client_key;
-    public $sign_key;
-    public $base_url = 'http://www.openapi.com/'; // for test.
-    public $http_code;
-    public $time_out = 30;
-    public $connect_timeout = 30;
-    public $user_agent = 'JMOpenAPI 2.0';
-    public $debug = false; // for debug
+    private $client_id;
+    private $client_key;
+    private $sign_key;
+    private $base_url = 'http://www.openapi.com/'; // for test.
+    private $time_out = 30;
+    private $connect_timeout = 30;
+    private $user_agent = 'JMOpenAPI 2.0';
+    private $debug = false; // for debug
 
     /**
      * The construct for JMOpenApi.
@@ -67,21 +72,6 @@ class JMOpenApi
     public function post($url, array $parameters = array())
     {
         $response = $this->authRequest($url,'POST',$parameters);
-        print_r($response);
-        return json_decode($response,true);
-    }
-
-    /**
-     * DELETE wrapper for JMOpenApi.
-     *
-     * @param string $url        The url to delete.
-     * @param array  $parameters The parameters.
-     *
-     * @return array             The response from server.
-     */
-    public function delete($url, array $parameters = array())
-    {
-        $response = $this->authRequest($url,'DELETE',$parameters);
         return json_decode($response,true);
     }
 
@@ -95,7 +85,7 @@ class JMOpenApi
      * @return mixed    $response       The responses.
      * @throws JMOpenApiException If method doese not support.
      */
-    public function authRequest($url, $method, array $parameters = array())
+    public function authRequest($url, $method = 'GET', array $parameters = array())
     {
         if (strrpos($url, 'http://') !== 0 && strrpos($url, 'https://') !== 0 ) {
             $url = $this->base_url.$url;
@@ -111,10 +101,6 @@ class JMOpenApi
             case 'POST':
                 $body = http_build_query($parameters);
                 return $this->request($url,'POST',$body);
-                break;
-            case 'DELETE':
-                $body = http_build_query($parameters);
-                return $this->request($url,'DELETE',$body);
                 break;
             default:
                 throw new JMOpenApiException('No support method');
@@ -134,7 +120,7 @@ class JMOpenApi
      * @return mixed    $response   The responses.
      * @throws JMOpenApiException    If method does not support.
      */
-    public function request($url, $method, $postdata = null, array $headers = array())
+    private function request($url, $method, $postdata = null, array $headers = array())
     {
         // curl settings for http
         $ch = curl_init();
@@ -154,14 +140,6 @@ class JMOpenApi
                     curl_setopt($ch, CURLOPT_POST, true);
                     curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
                 }
-                break;
-            case 'DELETE':
-                throw new JMOpenApiException("No Support method");
-                /*
-                 if (!empty($postdata)) {
-                     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-                     $url = $url.'?'.$postdata;
-                 }*/
                 break;
             default:
                 throw new JMOpenApiException('No support method');
@@ -200,76 +178,6 @@ class JMOpenApi
         unset($k, $v);
         $strtosigned .= $vender_key;
         return strtoupper(md5($strtosigned));
-    }
-
-    /**
-     * 获取订单列表.
-     *
-     * @param integer $order_id The order id.
-     *
-     * @return array             The order details.
-     */
-    public function getOrderById($order_id)
-    {
-        return $this->post('Order/GetOrderById',array('order_id' => $order_id));
-    }
-
-    /**
-     * 通过id获取订单的details.
-     *
-     * @param array $params The orders.
-     *
-     * @return array        The orders list.
-     */
-    public function getOrder(array $params = array())
-    {
-        return $this->post('Order/GetOrder',$params);
-    }
-
-    /**
-     * 获取聚美合作的快递合作商.
-     *
-     * @return array The logistics list.
-     */
-    public function getLogistics()
-    {
-        return $this->post('Order/getLogistics');
-    }
-
-    /**
-     * 第三方ERP通过接口一获取订单成功后，返回给聚美，将订单修改为配货中状态（只将2状态的订单更新为7状态）.
-     *
-     * @param array $param The parameters.
-     *
-     * @return array       The result.
-     */
-    public function setOrderStock(array $param = array())
-    {
-        return $this->post('Order/SetOrderStock',$param);
-    }
-
-    /**
-     * 第三方ERP通过该接口将已经发货订单的快递信息返回给聚美系统.
-     *
-     * @param array $params The orderId,logisticId,logisticTrackNo.
-     *
-     * @return array The result
-     */
-    public function setShipping(array $params = array())
-    {
-        return $this->post('Order/SetShipping',$params);
-    }
-
-    /**
-     * 第三方ERP通过接口，实时更新某个sku的库存.
-     *
-     * @param array $params The upc_code and enable_nubmer
-     *
-     * @return array        The result.
-     */
-    public function syncStock(array $params = array())
-    {
-        return $this->post('Stock/StockSync',$params);
     }
 
 }
